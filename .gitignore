@@ -1,0 +1,17 @@
+# Credenciais de acesso ao banco
+.env
+
+# Ambiente virtual do Python
+.venv/
+
+# Arquivos de dados
+data/
+*.zip
+*.csv
+
+# Cache gerado pelo Python
+__pycache__/
+*.pyc
+
+# Arquivos auxiliares do macOS
+.DS_Store

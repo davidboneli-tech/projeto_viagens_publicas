@@ -1,0 +1,5 @@
+gdown           # Baixa o ZIP do Google Drive
+psycopg2-binary  # Conecta o Python ao PostgreSQL
+pandas          # Organiza os resultados das consultas
+matplotlib      # Gera os gráficos
+ipykernel       # Permite executar o notebook com a .venv no VS Code

@@ -1,4 +1,5 @@
--- Cria o banco que armazenará as tabelas do projeto.
+-- Apaga o banco existente e recria sua estrutura do zero.
+DROP DATABASE IF EXISTS transparencia;
 CREATE DATABASE transparencia;
 
 -- CAMADA RAW: preserva os valores originais dos CSVs.

@@ -96,7 +96,10 @@ python 1_extrair.py
 python 2_transformar.py
 ```
 
-A criação do banco e das tabelas é uma etapa inicial. Os scripts de extração e transformação substituem os dados das respectivas camadas em novas execuções.
+A execução de `0_criar_banco.py` apaga e recria o banco `transparencia`,
+incluindo todos os seus dados, tabelas e VIEWs. Feche as conexões abertas
+com esse banco antes de executar. Após a recriação, execute novamente
+a extração, a transformação e o notebook para reconstruir o pipeline.
 
 ### 4. Executar a análise
 

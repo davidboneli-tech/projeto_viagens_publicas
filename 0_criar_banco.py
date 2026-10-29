@@ -1,53 +1,53 @@
 """
 0_criar_banco.py
 ---------------
-Executa o arquivo SQL para criar o banco e as oito tabelas.
+Recria o banco e executa a criação das oito tabelas.
+ATENÇÃO: a execução apaga todos os dados anteriores do banco transparencia.
 """
 
-import psycopg2  # Biblioteca de conexão com o PostgreSQL
+import psycopg2  # Conecta ao PostgreSQL
 
-from banco import conectar  # Função que conecta ao banco definido no .env
-from config import PASTA_RAIZ, POSTGRES_CONFIG  # Caminho e configurações
-
-
-arquivo_sql = PASTA_RAIZ / "0_criar_banco.sql"  # Localiza o arquivo SQL
-conteudo_sql = arquivo_sql.read_text(encoding="utf-8")  # Lê seu conteúdo
-
-# Separa o primeiro comando (CREATE DATABASE) dos comandos das tabelas.
-sql_banco, separador, sql_tabelas = conteudo_sql.partition(";")
-
-if not separador or not sql_tabelas.strip():  # Confere se há comandos das tabelas
-    raise ValueError("O SQL precisa conter a criação do banco e das tabelas.")
-
-config_admin = POSTGRES_CONFIG.copy()  # Copia as configurações originais
-config_admin["dbname"] = "postgres"  # Seleciona um banco existente no servidor
-
-conexao_admin = psycopg2.connect(**config_admin)  # Abre a conexão administrativa
-
-try:
-    conexao_admin.autocommit = True  # Permite executar CREATE DATABASE
-
-    with conexao_admin.cursor() as cursor:  # Abre o cursor e o fecha ao sair
-        cursor.execute(sql_banco)  # Cria o banco transparencia
-
-    print("Banco transparencia criado.")  # Informa a conclusão desta etapa
-
-finally:
-    conexao_admin.close()  # Fecha a conexão administrativa
+from banco import conectar  # Abre a conexão com o banco do projeto
+from config import PASTA_RAIZ, POSTGRES_CONFIG  # Importa caminho e configuração
 
 
-conexao = conectar()  # Conecta ao banco transparencia recém-criado
+def main():  # Organiza a recriação do banco e das tabelas
+    if POSTGRES_CONFIG["dbname"] != "transparencia":  # Confere o banco esperado pelo SQL
+        raise ValueError("POSTGRES_DATABASE deve ser transparencia neste projeto.")
 
-try:
-    with conexao.cursor() as cursor:  # Abre o cursor e o fecha ao sair
-        cursor.execute(sql_tabelas)  # Cria as quatro tabelas Raw e quatro Silver
+    arquivo_sql = PASTA_RAIZ / "0_criar_banco.sql"  # Localiza o SQL
+    conteudo_sql = arquivo_sql.read_text(encoding="utf-8")  # Lê os comandos
+    partes = conteudo_sql.split(";", 2)  # Separa DROP, CREATE DATABASE e tabelas
 
-    conexao.commit()  # Confirma a criação das oito tabelas
-    print("As oito tabelas foram criadas com sucesso.")  # Informa o resultado
+    if len(partes) != 3 or not partes[2].strip():  # Confere as três partes
+        raise ValueError("O SQL deve conter DROP DATABASE, CREATE DATABASE e as tabelas.")
 
-except Exception:
-    conexao.rollback()  # Desfaz a criação das tabelas se ocorrer uma falha
-    raise  # Mostra o erro original no terminal
+    sql_drop, sql_create, sql_tabelas = partes  # Identifica cada etapa
+    config_admin = POSTGRES_CONFIG.copy()  # Copia as configurações
+    config_admin["dbname"] = "postgres"  # Conecta a um banco administrativo
 
-finally:
-    conexao.close()  # Fecha a conexão mesmo se ocorrer um erro
+    conexao_admin = psycopg2.connect(**config_admin)  # Abre a conexão administrativa
+    try:  # Garante o fechamento da conexão
+        conexao_admin.autocommit = True  # Executa DROP e CREATE fora de transação
+        with conexao_admin.cursor() as cursor:  # Fecha o cursor ao terminar
+            cursor.execute(sql_drop)  # Apaga transparencia, caso exista
+            cursor.execute(sql_create)  # Cria novamente o banco vazio
+        print("Banco transparencia recriado.")  # Informa a conclusão
+    finally:  # Executa mesmo se ocorrer uma falha
+        conexao_admin.close()  # Fecha a conexão administrativa
+
+    conexao = conectar()  # Conecta ao banco recém-criado
+    try:  # Inicia a criação das tabelas
+        with conexao.cursor() as cursor:  # Fecha o cursor ao terminar
+            cursor.execute(sql_tabelas)  # Cria as quatro Raw e quatro Silver
+        conexao.commit()  # Confirma a criação das oito tabelas
+        print("As oito tabelas foram criadas com sucesso.")  # Informa o resultado
+    except Exception:  # Captura uma falha na criação das tabelas
+        conexao.rollback()  # Desfaz a criação incompleta das tabelas
+        raise  # Exibe o erro original
+    finally:  # Executa no sucesso ou na falha
+        conexao.close()  # Fecha a conexão com o projeto
+
+
+if __name__ == "__main__":  # Executa apenas quando chamado diretamente
+    main()  # Inicia a recriação

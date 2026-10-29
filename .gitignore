@@ -15,3 +15,6 @@ __pycache__/
 
 # Arquivos auxiliares do macOS
 .DS_Store
+
+# Notebook pessoal de estudo
+3_analise_estudo.ipynb
